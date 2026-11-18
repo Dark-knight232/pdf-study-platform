@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import MontfortIngestionDropzone from "../components/MontfortIngestionDropzone";
 import QuizEngine from "../components/QuizEngine";
 
@@ -43,16 +43,10 @@ export default function Home() {
   const [summary, setSummary] = useState<SummaryData | null>(null);
   const [roadmapLoading, setRoadmapLoading] = useState(false);
   const [summaryLoading, setSummaryLoading] = useState(false);
-  const [scrollY, setScrollY] = useState(0);
 
-  const handleScroll = useCallback(() => {
-    setScrollY(window.scrollY);
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [handleScroll]);
+  const skyRef = useRef<HTMLDivElement>(null);
+  const mtnRef = useRef<HTMLDivElement>(null);
+  const forestRef = useRef<HTMLDivElement>(null);
 
   const handleDocumentComplete = (id: string) => {
     setDocId(id);
@@ -86,36 +80,114 @@ export default function Home() {
     load();
   }, [docId]);
 
+  // Three-layer parallax background: sky -> mountain -> forest, driven by scroll.
+  useEffect(() => {
+    let raf = 0;
+    const update = () => {
+      const y = window.scrollY;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const p = max > 0 ? Math.max(0, Math.min(1, y / max)) : 0;
+
+      const skyO = Math.max(0, 1 - p * 2.5);
+      const mtnO = Math.max(
+        0,
+        Math.min(1, (p - 0.1) * 5) * Math.max(0, Math.min(1, (0.8 - p) * 3))
+      );
+      const forestO = Math.max(0, Math.min(1, (p - 0.45) * 3));
+
+      const layers = [
+        { ref: skyRef, opacity: skyO, posPct: p * 50 },        // 0->50% pan across first half of scroll
+        { ref: mtnRef, opacity: mtnO, posPct: p * 100 },        // full-image pan throughout
+        {
+          ref: forestRef,
+          opacity: forestO,
+          posPct: Math.max(0, Math.min(1, (p - 0.5) * 2)) * 100, // starts panning after 50% scroll
+        },
+      ];
+
+      // Highest opacity layer paints on top (correct crossfade layering)
+      layers.sort((a, b) => b.opacity - a.opacity);
+      layers.forEach((l, i) => {
+        const el = l.ref.current;
+        if (el) {
+          el.style.opacity = l.opacity.toFixed(3);
+          el.style.backgroundPosition = `center ${l.posPct.toFixed(2)}%`;
+          el.style.zIndex = (2 - i).toString();
+        }
+      });
+    };
+
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(update);
+    };
+
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#0B0D0E] text-[#E6E8EA] relative">
-      {/* ROYAL PARALLAX BACKGROUND — fixed, never runs out, drifts on scroll */}
+      {/* ===== LAYER 1 // SKY ===== */}
       <div
+        ref={skyRef}
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{
+          backgroundImage: "url(/sky.png)",
+          backgroundSize: "cover",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "center 0%",
+        }}
+      />
+      {/* ===== LAYER 2 // MOUNTAIN ===== */}
+      <div
+        ref={mtnRef}
         className="fixed inset-0 z-0 pointer-events-none"
         style={{
           backgroundImage: "url(/montfort-bg.png)",
           backgroundSize: "cover",
-          backgroundPosition: `center ${scrollY * 0.35}px`,
-          opacity: 0.6,
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "center 0%",
+          opacity: 0,
+        }}
+      />
+      {/* ===== LAYER 3 // FOREST ===== */}
+      <div
+        ref={forestRef}
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{
+          backgroundImage: "url(/forest.png)",
+          backgroundSize: "cover",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "center 0%",
+          opacity: 0,
+        }}
+      />
+
+      {/* Readability + royal tint overlays (above images, below content) */}
+      <div
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(11,13,14,0.45) 0%, rgba(11,13,14,0.18) 25%, rgba(11,13,14,0.3) 65%, rgba(11,13,14,0.7) 100%)",
         }}
       />
       <div
         className="fixed inset-0 z-0 pointer-events-none"
         style={{
           background:
-            "linear-gradient(180deg, rgba(11,13,14,0.55) 0%, rgba(11,13,14,0.25) 30%, rgba(11,13,14,0.35) 60%, rgba(11,13,14,0.85) 100%)",
-        }}
-      />
-      <div
-        className="fixed inset-0 z-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(15,81,50,0.18) 0%, transparent 70%)",
+            "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(15,81,50,0.16) 0%, transparent 70%)",
         }}
       />
 
       {/* ================= SECTION 1 // THE TITLE ================= */}
       <section className="relative z-10 min-h-screen flex flex-col items-center justify-center px-8 text-center">
-        {/* gold circle ornament */}
         <div className="absolute left-[18%] top-[38%] hidden md:block">
           <div className="w-16 h-16 rounded-full border border-[#C6A15B]/60" />
         </div>
@@ -134,7 +206,6 @@ export default function Home() {
           roadmaps, executive summaries, and ascension trials.
         </p>
 
-        {/* scroll indicator */}
         <div className="absolute bottom-12 flex flex-col items-center gap-3 text-[#C6A15B]">
           <span className="text-[10px] font-mono tracking-[0.3em] uppercase">Scroll</span>
           <div className="w-px h-12 bg-gradient-to-b from-[#C6A15B] to-transparent" />
@@ -158,7 +229,7 @@ export default function Home() {
           {FEATURES.map((f) => (
             <article
               key={f.num}
-              className="bg-[#0B0D0E]/85 backdrop-blur-sm p-8 md:p-10 flex flex-col"
+              className="bg-[#0B0D0E]/80 backdrop-blur-sm p-8 md:p-10 flex flex-col"
             >
               <div className="text-xs font-mono tracking-widest text-[#C6A15B] mb-6">
                 {f.num}
@@ -202,7 +273,7 @@ export default function Home() {
                 {roadmapLoading && <span className="text-xs font-mono text-[#666]">LOADING...</span>}
               </header>
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {roadmap.map((m, i) => (
+                {roadmap.map((m) => (
                   <article key={m.id} className="border border-[#22292D] bg-[#121618]/90 p-6">
                     <div className="text-xs font-mono tracking-widest text-[#C6A15B] uppercase mb-2">
                       {m.id}
