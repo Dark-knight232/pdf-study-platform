@@ -9,9 +9,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .db import Base, Document, DocumentChunk, engine, get_session
-from .synthesis import generate_roadmap, generate_summary
-from .quiz import generate_quiz
+from app.db import Base, Document, DocumentChunk, engine, get_session
+from app.synthesis import generate_roadmap, generate_summary
+from app.quiz import generate_quiz
+from app.config import settings
 
 app = FastAPI(title="Knowledge Synthesis Engine", version="1.0.0")
 
@@ -70,7 +71,6 @@ async def upload_document(file: UploadFile = File(...), session: AsyncSession = 
     await session.commit()
 
     try:
-        from .config import settings
         from supabase import create_client
 
         supabase = create_client(settings.supabase_url, settings.supabase_key)
