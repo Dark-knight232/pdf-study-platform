@@ -10,8 +10,9 @@ interface QuizQuestion {
   explanation: string;
 }
 
-const XP_PER_CORRECT = 15;
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://pdf-study-api.onrender.com";
 const START_HEARTS = 5;
+const XP_PER_CORRECT = 15;
 
 export default function QuizEngine({ documentId }: { documentId: string }) {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -27,7 +28,7 @@ export default function QuizEngine({ documentId }: { documentId: string }) {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(`/api/v1/documents/${documentId}/quiz`, { method: "POST" });
+        const res = await fetch(`${API_BASE}/api/v1/documents/${documentId}/quiz`, { method: "POST" });
         const data = await res.json();
         setQuestions(data.questions || []);
       } finally {
