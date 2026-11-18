@@ -50,5 +50,17 @@ class QuizQuestionRow(Base):
     options: Mapped[list] = mapped_column(JSON)
     correct_answer: Mapped[str] = mapped_column(Text)
     explanation: Mapped[str] = mapped_column(Text)
+
+
+class Document(Base):
+    __tablename__ = "documents"
+    document_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    filename: Mapped[str] = mapped_column(String(256))
+    status: Mapped[str] = mapped_column(String(32))
+    page_count: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[str] = mapped_column(String(64))
+
+
+async def get_session() -> AsyncSession:
     async with SessionLocal() as session:
         yield session
