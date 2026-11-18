@@ -1,12 +1,8 @@
 import os
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
 import uuid
 from datetime import datetime, timezone
-import fitz
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
@@ -42,6 +38,8 @@ async def supabase_status():
 
 @app.post("/api/v1/documents/upload")
 async def upload_document(file: UploadFile = File(...)):
+    import fitz
+
     if file.content_type not in ("application/pdf", "application/x-pdf"):
         raise HTTPException(status_code=400, detail="ERROR // INVALID MIME TYPE [EXPECTED: application/pdf]")
 
