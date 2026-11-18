@@ -19,7 +19,7 @@ export default function MontfortIngestionDropzone({
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [logs, setLogs] = useState<string[]>([]);
   const [documentId, setDocumentId] = useState<string | null>(null);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const addLog = (message: string) => {
@@ -124,23 +124,21 @@ export default function MontfortIngestionDropzone({
   }, [uploadState, documentId, onDocumentComplete]);
 
   return (
-    <main className="min-h-screen bg-[#080808] text-[#E6E6E6] font-sans px-8 py-16 flex flex-col justify-between selection:bg-white selection:text-black">
-      
-      {/* TOP EDITORIAL HEADER */}
-      <header className="max-w-7xl mx-auto w-full grid grid-cols-2 md:grid-cols-4 pb-8 border-b border-[#222] text-[11px] tracking-widest uppercase text-[#888]">
+    <main className="min-h-screen text-[#E6E6E6] font-sans px-8 py-16 flex flex-col justify-between selection:bg-white selection:text-black relative z-10">
+      <header className="max-w-7xl mx-auto w-full grid grid-cols-2 md:grid-cols-4 pb-8 border-b border-[#222] text-[11px] tracking-widest uppercase text-[#888] relative z-10">
         <div>PHASE 01 // INGESTION</div>
         <div className="text-right md:text-left">SYSTEM: SECURE</div>
         <div className="hidden md:block">LIMIT: 20 PAGES</div>
         <div className="hidden md:block text-right">STATUS: {uploadState}</div>
       </header>
 
-      {/* HERO STATEMENT (MONTFORT STYLE) */}
-      <section className="max-w-7xl mx-auto w-full my-16 grid grid-cols-1 lg:grid-cols-12 gap-12 items-end">
+      {/* HERO STATEMENT (GRANDMASTER SUITE STYLE) */}
+      <section className="max-w-7xl mx-auto w-full my-16 grid grid-cols-1 lg:grid-cols-12 gap-12 items-end relative z-10">
         <div className="lg:col-span-8">
           <h1 className="text-5xl sm:text-7xl font-light tracking-tight text-white leading-[1.05] uppercase">
-            Document <br />
-            <span className="italic font-serif text-[#999]">Ingestion</span> & <br />
-            Validation.
+            GrandMaster <br />
+            <span className="italic font-serif text-[#999]">Suite</span> & <br />
+            Platform.
           </h1>
           <p className="mt-8 text-sm text-[#888] max-w-xl font-normal leading-relaxed">
             Upload raw study material. Our pipeline executes client-side structural validation, high-density OCR extraction, and multi-tier knowledge synthesis before tokenization.
@@ -159,7 +157,7 @@ export default function MontfortIngestionDropzone({
       </section>
 
       {/* DROPZONE ARCHITECTURE */}
-      <section className="max-w-7xl mx-auto w-full mb-16">
+      <section className="max-w-7xl mx-auto w-full mb-16 relative z-10">
         <div
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
@@ -218,8 +216,8 @@ export default function MontfortIngestionDropzone({
       </section>
 
       {/* FOOTER */}
-      <footer className="max-w-7xl mx-auto w-full pt-8 border-t border-[#222] flex flex-col md:flex-row justify-between items-center text-[11px] text-[#666] tracking-wider">
-        <span>MONTFORT ARCHITECTURE // KNOWLEDGE ENGINE</span>
+      <footer className="max-w-7xl mx-auto w-full pt-8 border-t border-[#222] flex flex-col md:flex-row justify-between items-center text-[11px] text-[#666] tracking-wider relative z-10">
+        <span>GRANDMASTER SUITE // KNOWLEDGE ENGINE</span>
         <span className="mt-2 md:mt-0">SECURE PARSING PIPELINE</span>
       </footer>
 

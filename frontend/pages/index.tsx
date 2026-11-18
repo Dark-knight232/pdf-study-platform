@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import MontfortIngestionDropzone from "../components/MontfortIngestionDropzone";
 import QuizEngine from "../components/QuizEngine";
 
@@ -25,6 +25,16 @@ export default function Home() {
   const [summary, setSummary] = useState<SummaryData | null>(null);
   const [roadmapLoading, setRoadmapLoading] = useState(false);
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
+
+  const handleScroll = useCallback(() => {
+    setScrollY(window.scrollY);
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [handleScroll]);
 
   const handleDocumentComplete = (id: string) => {
     setDocId(id);
@@ -59,14 +69,31 @@ export default function Home() {
   }, [docId]);
 
   return (
-    <div className="min-h-screen bg-[#0B0D0E] text-[#E6E8EA]">
-      <div className="max-w-7xl mx-auto px-8 py-12">
+    <div className="min-h-screen bg-[#0B0D0E] text-[#E6E8EA] relative overflow-hidden">
+      {/* PARALLAX BACKGROUND IMAGE (GrandMaster Mountain) */}
+      <div
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{
+          backgroundImage: "url(/montfort-bg.png)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundAttachment: "fixed",
+          transform: `translateY(${scrollY * 0.3}px)`,
+          opacity: 0.12,
+          filter: "blur(0.5px)",
+        }}
+      />
+      <div
+        className="fixed inset-0 z-0 pointer-events-none bg-gradient-to-b from-[#0B0D0E]/60 to-[#0B0D0E]/95"
+      />
+
+      <div className="max-w-7xl mx-auto px-8 py-12 relative z-10">
         <MontfortIngestionDropzone onDocumentComplete={handleDocumentComplete} />
 
         {docId && (
           <>
             {/* ROADMAP */}
-            <section className="mt-16">
+            <section className="mt-16 relative z-10">
               <header className="mb-8 flex items-center justify-between">
                 <h2 className="text-3xl font-light tracking-tight uppercase">
                   Learning <span className="italic font-serif text-[#999]">Roadmap</span>
@@ -93,7 +120,7 @@ export default function Home() {
             </section>
 
             {/* SUMMARY */}
-            <section className="mt-16">
+            <section className="mt-16 relative z-10">
               <header className="mb-8 flex items-center justify-between">
                 <h2 className="text-3xl font-light tracking-tight uppercase">
                   Executive <span className="italic font-serif text-[#999]">Summary</span>
@@ -136,7 +163,7 @@ export default function Home() {
             </section>
 
             {/* QUIZ */}
-            <section className="mt-16">
+            <section className="mt-16 relative z-10">
               <QuizEngine documentId={docId} />
             </section>
           </>
