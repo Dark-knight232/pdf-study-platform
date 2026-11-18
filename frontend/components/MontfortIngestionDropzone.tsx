@@ -7,7 +7,11 @@ const API_BASE = "https://pdf-study-api.onrender.com";
 
 type UploadState = 'IDLE' | 'VALIDATING' | 'UPLOADING' | 'PROCESSING' | 'COMPLETED' | 'ERROR';
 
-export default function MontfortIngestionDropzone() {
+export default function MontfortIngestionDropzone({
+  onDocumentComplete,
+}: {
+  onDocumentComplete?: (id: string) => void;
+}) {
   const [dragOver, setDragOver] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [uploadState, setUploadState] = useState<UploadState>('IDLE');
@@ -105,6 +109,7 @@ export default function MontfortIngestionDropzone() {
           setUploadState('COMPLETED');
           addLog('[SUCCESS] Extraction & Knowledge Pipeline Synchronized.');
           clearInterval(interval);
+          if (onDocumentComplete) onDocumentComplete(documentId);
         } else if (data.status === 'FAILED') {
           setUploadState('ERROR');
           setErrorMessage(`PIPELINE FAILURE: ${data.error_message}`);
@@ -116,7 +121,7 @@ export default function MontfortIngestionDropzone() {
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [uploadState, documentId]);
+  }, [uploadState, documentId, onDocumentComplete]);
 
   return (
     <main className="min-h-screen bg-[#080808] text-[#E6E6E6] font-sans px-8 py-16 flex flex-col justify-between selection:bg-white selection:text-black">
