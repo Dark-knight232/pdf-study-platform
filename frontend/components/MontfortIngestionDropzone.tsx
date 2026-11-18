@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { PDFDocument } from 'pdf-lib';
 
 const API_BASE = "https://pdf-study-api.onrender.com";
@@ -95,7 +95,7 @@ export default function MontfortIngestionDropzone({
     }
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (uploadState !== 'PROCESSING' || !documentId) return;
 
     const interval = setInterval(async () => {
@@ -124,103 +124,76 @@ export default function MontfortIngestionDropzone({
   }, [uploadState, documentId, onDocumentComplete]);
 
   return (
-    <main className="min-h-screen text-[#E6E6E6] font-sans px-8 py-16 flex flex-col justify-between selection:bg-white selection:text-black relative z-10">
-      <header className="max-w-7xl mx-auto w-full grid grid-cols-2 md:grid-cols-4 pb-8 border-b border-[#222] text-[11px] tracking-widest uppercase text-[#888] relative z-10">
-        <div>PHASE 01 // INGESTION</div>
-        <div className="text-right md:text-left">SYSTEM: SECURE</div>
-        <div className="hidden md:block">LIMIT: 20 PAGES</div>
-        <div className="hidden md:block text-right">STATUS: {uploadState}</div>
-      </header>
-
-      {/* HERO STATEMENT (GRANDMASTER SUITE STYLE) */}
-      <section className="max-w-7xl mx-auto w-full my-16 grid grid-cols-1 lg:grid-cols-12 gap-12 items-end relative z-10">
-        <div className="lg:col-span-8">
-          <h1 className="text-5xl sm:text-7xl font-light tracking-tight text-white leading-[1.05] uppercase">
-            GrandMaster <br />
-            <span className="italic font-serif text-[#999]">Suite</span> & <br />
-            Platform.
-          </h1>
-          <p className="mt-8 text-sm text-[#888] max-w-xl font-normal leading-relaxed">
-            Upload raw study material. Our pipeline executes client-side structural validation, high-density OCR extraction, and multi-tier knowledge synthesis before tokenization.
-          </p>
-        </div>
-
-        {/* METRIC CARD */}
-        <div className="lg:col-span-4 border border-[#222] p-6 bg-[#0D0D0D] flex flex-col justify-between h-48">
-          <span className="text-[10px] tracking-widest text-[#666] uppercase">SECURE REPOSITORY</span>
-          <div>
-            <div className="text-3xl font-light text-white font-mono">15.0 MB</div>
-            <div className="text-xs text-[#888] mt-1">Maximum payload capacity per stream</div>
-          </div>
-          <div className="text-[10px] text-emerald-500 font-mono">READY FOR INPUT</div>
-        </div>
-      </section>
-
+    <section className="relative z-10">
       {/* DROPZONE ARCHITECTURE */}
-      <section className="max-w-7xl mx-auto w-full mb-16 relative z-10">
-        <div
-          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDragOver(false);
-            if (e.dataTransfer.files?.[0]) validateAndProcessFile(e.dataTransfer.files[0]);
-          }}
-          onClick={() => fileInputRef.current?.click()}
-          className={`border transition-all p-16 md:p-24 text-center cursor-pointer bg-[#0D0D0D] relative group ${
-            dragOver ? 'border-white bg-white/5' : 'border-[#222] hover:border-[#444]'
-          }`}
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/pdf"
-            className="hidden"
-            onChange={(e) => e.target.files?.[0] && validateAndProcessFile(e.target.files[0])}
-          />
+      <div
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+          if (e.dataTransfer.files?.[0]) validateAndProcessFile(e.dataTransfer.files[0]);
+        }}
+        onClick={() => fileInputRef.current?.click()}
+        className={`border transition-all p-16 md:p-24 text-center cursor-pointer bg-[#0D0D0D]/80 backdrop-blur-sm relative group ${
+          dragOver ? 'border-white bg-white/5' : 'border-[#22292D] hover:border-[#444]'
+        }`}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/pdf"
+          className="hidden"
+          onChange={(e) => e.target.files?.[0] && validateAndProcessFile(e.target.files[0])}
+        />
 
-          <div className="space-y-4 max-w-md mx-auto">
-            <span className="text-xs font-mono uppercase tracking-widest text-[#666] block">
-              [ DROPZONE // SOURCE_PDF ]
-            </span>
-            <h2 className="text-xl font-light tracking-wide text-white">
-              {file ? file.name : 'Drag & drop your PDF document here, or click to browse.'}
-            </h2>
-            <span className="text-xs text-[#888] block">
-              Enforces strict client-side page counts (≤ 20 pages) prior to network transmission.
-            </span>
-          </div>
-        </div>
-
-        {/* ERROR NOTICE */}
-        {errorMessage && (
-          <div className="mt-4 p-4 border border-red-900/50 bg-red-950/20 text-red-400 text-xs font-mono">
-            {errorMessage}
-          </div>
-        )}
-
-        {/* TERMINAL LOGS */}
-        {logs.length > 0 && (
-          <div className="mt-4 border border-[#222] bg-[#0A0A0A] p-6 font-mono text-xs text-[#888] space-y-2">
-            <div className="text-[#550000] uppercase tracking-widest text-[10px] pb-2 border-b border-[#222] flex justify-between">
-              <span>Execution Log</span>
-              <span>{uploadState}</span>
-            </div>
-            {logs.map((log, i) => (
-              <div key={i} className={log.includes('SUCCESS') ? 'text-emerald-400' : log.includes('FATAL') ? 'text-red-400' : ''}>
-                {log}
+        <div className="space-y-4 max-w-md mx-auto">
+          <span className="text-xs font-mono uppercase tracking-widest text-[#666] block">
+            [ DROPZONE // SOURCE_PDF ]
+          </span>
+          <h3 className="text-xl font-light tracking-wide text-white">
+            {file ? file.name : 'Drag & drop your PDF document here, or click to browse.'}
+          </h3>
+          <span className="text-xs text-[#888] block">
+            Enforces strict client-side page counts (≤ 20 pages) prior to network transmission.
+          </span>
+          {uploadState !== 'IDLE' && (
+            <div className="pt-2">
+              <div className="h-px w-full bg-[#22292D] relative overflow-hidden">
+                <div
+                  className="h-full bg-[#0F5132] transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                />
               </div>
-            ))}
+              <span className="text-[10px] font-mono text-[#666] mt-2 block">
+                {uploadState} // {uploadProgress}%
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ERROR NOTICE */}
+      {errorMessage && (
+        <div className="mt-4 p-4 border border-red-900/50 bg-red-950/20 text-red-400 text-xs font-mono">
+          {errorMessage}
+        </div>
+      )}
+
+      {/* TERMINAL LOGS */}
+      {logs.length > 0 && (
+        <div className="mt-4 border border-[#22292D] bg-[#0A0A0A]/90 p-6 font-mono text-xs text-[#888] space-y-2">
+          <div className="text-[#555] uppercase tracking-widest text-[10px] pb-2 border-b border-[#22292D] flex justify-between">
+            <span>Execution Log</span>
+            <span>{uploadState}</span>
           </div>
-        )}
-      </section>
-
-      {/* FOOTER */}
-      <footer className="max-w-7xl mx-auto w-full pt-8 border-t border-[#222] flex flex-col md:flex-row justify-between items-center text-[11px] text-[#666] tracking-wider relative z-10">
-        <span>GRANDMASTER SUITE // KNOWLEDGE ENGINE</span>
-        <span className="mt-2 md:mt-0">SECURE PARSING PIPELINE</span>
-      </footer>
-
-    </main>
+          {logs.map((log, i) => (
+            <div key={i} className={log.includes('SUCCESS') ? 'text-emerald-400' : log.includes('FATAL') || log.includes('ERROR') ? 'text-red-400' : ''}>
+              {log}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
