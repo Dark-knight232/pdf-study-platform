@@ -182,7 +182,7 @@ export default function MontfortIngestionDropzone() {
               {file ? file.name : 'Drag & drop your PDF document here, or click to browse.'}
             </h2>
             <span className="text-xs text-[#888] block">
-              Enforces strict client-side page counts ($\le$ 20 pages) prior to network transmission.
+              Enforces strict client-side page counts (≤ 20 pages) prior to network transmission.
             </span>
           </div>
         </div>
