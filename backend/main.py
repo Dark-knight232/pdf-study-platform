@@ -206,43 +206,137 @@ async def quiz(document_id: str):
 
     pages_context = "\n\n".join([f"[PAGE {i+1}] {c}" for i, c in enumerate(cache.get("pages", []))])
 
-    system = ("You are a quiz generator. Return JSON with key 'questions', an array of 10 objects. "
-              "Each: question (string), type (mcq|true_false|fill_blank), options (array of 4 strings for mcq, "
-              "[\"True\",\"False\"] for true_false, [] for fill_blank), correct_answer (string matching one option or answer), "
-              "explanation (string). Return ONLY valid JSON.")
+    # First, try to get modules from cached roadmap
+    modules = cache.get("modules", [])
+    if not modules:
+        # Generate roadmap first, then use its modules
+        try:
+            rm = await _call_llm(
+                "You are a curriculum architect. Given document chunks, produce a JSON object "
+                "with key 'modules', an array of objects with fields: id (string like mod_1), "
+                "title, description, source_pages (array of page numbers). Return ONLY valid JSON.",
+                f"Document chunks:\n{pages_context}"
+            )
+            modules = rm.get("modules", []) if rm else []
+            if modules and isinstance(modules, dict):
+                modules = [modules]
+            cache["modules"] = modules
+        except Exception:
+            modules = []
 
-    user = f"Generate 10 diverse questions from:\n{pages_context}"
-
-    raw = await _call_llm(system, user)
-    if not raw:
-        # Fallback stub: 10 simple questions
+    # Build response: 3 levels, one per module (or fallback to single level)
+    if modules:
+        modules = modules[:3]  # cap at 3 levels
+        # Deduplicate source_pages if any
+        for m in modules:
+            if isinstance(m.get("source_pages"), list):
+                m["source_pages"] = [int(x) for x in m["source_pages"]]
+        # Generate 3 levels, each with 3 questions from the LLM
+        level_titles = [m.get("title", f"Module {i+1}") for i, m in enumerate(modules)]
+        questions_per_level = 3
         questions = []
-        for i in range(10):
-            qtype = ["mcq", "true_false", "fill_blank"][i % 3]
-            if qtype == "mcq":
+        for i, mod in enumerate(modules):
+            mod_context = f"\nModule: {mod.get('title', '')}\nDescription: {mod.get('description', '')}\nSource pages: {mod.get('source_pages', [1])}"
+            system = ("You are a quiz generator. Return JSON with key 'levels', an array of level objects. "
+                      "Each level has 'title' (string, the module title) and 'questions' (array of exactly "
+                      "3 objects). Each question: question (string), type (mcq|true_false), "
+                      'options (array of exactly 4 strings for mcq, ["True","False"] for true_false), '
+                      "correct_answer (string matching one option), explanation (string). "
+                      "Do NOT include fill_blank type. Generate questions specifically about "
+                      "this module's content. Return ONLY valid JSON.")
+            user = f"{system}\n\nModule context:\n{mod_context}"
+            try:
+                raw = await _call_llm(system, user)
+                if raw and isinstance(raw, dict) and "levels" in raw:
+                    level_questions = raw["levels"][i].get("questions", []) if i < len(raw["levels"]) else []
+                    questions.append({
+                        "title": mod.get("title", f"Module {i+1}"),
+                        "questions": level_questions[:questions_per_level]
+                    })
+                else:
+                    # Fallback stub for this module
+                    q_fallback = []
+                    for j in range(questions_per_level):
+                        qtype = ["mcq", "true_false"][j % 2]
+                        if qtype == "mcq":
+                            q_fallback.append({
+                                "question": f"What does this module cover about {mod.get('title', 'this topic')}?",
+                                "type": "mcq",
+                                "options": ["A", "B", "C", "D"],
+                                "correct_answer": "A",
+                                "explanation": "Sample explanation."
+                            })
+                        else:
+                            q_fallback.append({
+                                "question": f"True or false: a key point from {mod.get('title', 'this module')}.",
+                                "type": "true_false",
+                                "options": ["True", "False"],
+                                "correct_answer": "True",
+                                "explanation": "Sample explanation."
+                            })
+                    questions.append({
+                        "title": mod.get("title", f"Module {i+1}"),
+                        "questions": q_fallback
+                    })
+            except Exception:
+                # Fallback stub
+                q_fallback = []
+                for j in range(questions_per_level):
+                    qtype = ["mcq", "true_false"][j % 2]
+                    if qtype == "mcq":
+                        q_fallback.append({
+                            "question": f"What does module {i+1} cover?",
+                            "type": "mcq",
+                            "options": ["A", "B", "C", "D"],
+                            "correct_answer": "A",
+                            "explanation": "Sample explanation."
+                        })
+                    else:
+                        q_fallback.append({
+                            "question": f"True or false: module {i+1} key point.",
+                            "type": "true_false",
+                            "options": ["True", "False"],
+                            "correct_answer": "True",
+                            "explanation": "Sample explanation."
+                        })
                 questions.append({
-                    "question": f"Question {i+1} about the document?",
-                    "type": "mcq",
-                    "options": ["A", "B", "C", "D"],
-                    "correct_answer": "A",
-                    "explanation": "Sample explanation."
+                    "title": modules[i].get("title", f"Module {i+1}") if i < len(modules) else f"Module {i+1}",
+                    "questions": q_fallback
                 })
-            elif qtype == "true_false":
-                questions.append({
-                    "question": f"Statement {i+1} is true or false?",
-                    "type": "true_false",
-                    "options": ["True", "False"],
-                    "correct_answer": "True",
-                    "explanation": "Sample explanation."
-                })
-            else:
-                questions.append({
-                    "question": f"Fill in the blank {i+1}: ...",
-                    "type": "fill_blank",
-                    "options": [],
-                    "correct_answer": "answer",
-                    "explanation": "Sample explanation."
-                })
+        return {"levels": questions}
+    else:
+        # No modules: single level with 10 questions (flat format for backward compat)
+        system = ("You are a quiz generator. Return JSON with key 'questions', an array of 10 objects. "
+                  "Each: question (string), type (mcq|true_false), options (array of 4 strings for mcq, "
+                  '["True","False"] for true_false), correct_answer (string matching one option), '
+                  "explanation (string). Return ONLY valid JSON. Do NOT include fill_blank type.")
+        user = f"Generate 10 diverse questions from:\n{pages_context}"
+        raw = await _call_llm(system, user)
+        if not raw:
+            questions = []
+            for i in range(10):
+                qtype = ["mcq", "true_false"][i % 2]
+                if qtype == "mcq":
+                    questions.append({
+                        "question": f"Question {i+1} about the document?",
+                        "type": "mcq",
+                        "options": ["A", "B", "C", "D"],
+                        "correct_answer": "A",
+                        "explanation": "Sample explanation."
+                    })
+                else:
+                    questions.append({
+                        "question": f"Statement {i+1} is true or false?",
+                        "type": "true_false",
+                        "options": ["True", "False"],
+                        "correct_answer": "True",
+                        "explanation": "Sample explanation."
+                    })
+            return {"questions": questions}
+
+        questions = raw.get("questions", [])
+        if isinstance(questions, dict):
+            questions = [questions]
         return {"questions": questions}
 
     # Ensure questions is a list

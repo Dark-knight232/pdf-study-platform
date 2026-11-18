@@ -4,10 +4,15 @@ import React, { useState, useCallback, useEffect } from "react";
 
 interface QuizQuestion {
   question: string;
-  type: "mcq" | "true_false" | "fill_blank";
+  type: "mcq" | "true_false";
   options: string[];
   correct_answer: string;
   explanation: string;
+}
+
+interface QuizLevel {
+  title: string;
+  questions: QuizQuestion[];
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://pdf-study-api.onrender.com";
@@ -15,8 +20,11 @@ const START_HEARTS = 5;
 const XP_PER_CORRECT = 15;
 
 export default function QuizEngine({ documentId }: { documentId: string }) {
-  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
-  const [index, setIndex] = useState(0);
+  const [levels, setLevels] = useState<QuizLevel[]>([]);
+  const [flatQuestions, setFlatQuestions] = useState<QuizQuestion[]>([]);
+  const [isLevelMode, setIsLevelMode] = useState(false);
+  const [levelIndex, setLevelIndex] = useState(0);
+  const [questionIndex, setQuestionIndex] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [hearts, setHearts] = useState(START_HEARTS);
   const [xp, setXp] = useState(0);
@@ -30,20 +38,65 @@ export default function QuizEngine({ documentId }: { documentId: string }) {
       try {
         const res = await fetch(`${API_BASE}/api/v1/documents/${documentId}/quiz`, { method: "POST" });
         const data = await res.json();
-        setQuestions(data.questions || []);
+        if (data.levels && data.levels.length > 0) {
+          setLevels(data.levels);
+          setIsLevelMode(true);
+          setLevelIndex(0);
+          setQuestionIndex(0);
+        } else if (data.questions && data.questions.length > 0) {
+          setFlatQuestions(data.questions);
+          setIsLevelMode(false);
+          setQuestionIndex(0);
+        }
       } finally {
         setLoading(false);
       }
     })();
   }, [documentId]);
 
-  const current = questions[index];
+  const currentLevel = isLevelMode && levelIndex < levels.length ? levels[levelIndex] : null;
+  const currentQuestion = currentLevel
+    ? (currentLevel.questions[questionIndex] || null)
+    : (flatQuestions[questionIndex] || null);
+
+  const totalQuestions = isLevelMode
+    ? levels.reduce((acc, l) => acc + l.questions.length, 0)
+    : flatQuestions.length;
+
+  const currentQuestionNumber = isLevelMode
+    ? levels.slice(0, levelIndex).reduce((acc, l) => acc + l.questions.length, 0) + questionIndex + 1
+    : questionIndex + 1;
+
+  const isLastLevel = isLevelMode && levelIndex >= levels.length - 1;
+  const isLastQuestionInLevel = currentLevel && questionIndex >= currentLevel.questions.length - 1;
+  const isLastQuestion = isLevelMode
+    ? (isLastLevel && questionIndex >= currentLevel.questions.length - 1)
+    : (questionIndex >= flatQuestions.length - 1);
+
+  const advance = useCallback(() => {
+    if (isLevelMode && currentLevel) {
+      if (questionIndex < currentLevel.questions.length - 1) {
+        setQuestionIndex((q) => q + 1);
+      } else if (levelIndex < levels.length - 1) {
+        setLevelIndex((l) => l + 1);
+        setQuestionIndex(0);
+      } else {
+        setGameOver(true);
+      }
+    } else {
+      if (questionIndex < flatQuestions.length - 1) {
+        setQuestionIndex((q) => q + 1);
+      } else {
+        setGameOver(true);
+      }
+    }
+  }, [isLevelMode, currentLevel, questionIndex, levelIndex, levels.length, flatQuestions.length]);
 
   const submit = useCallback(
     (answer: string) => {
-      if (!current || flash) return;
+      if (!currentQuestion || flash) return;
       setSelected(answer);
-      const correct = answer === current.correct_answer;
+      const correct = answer === currentQuestion.correct_answer;
       if (correct) {
         setFlash("correct");
         setXp((x) => x + XP_PER_CORRECT);
@@ -60,16 +113,16 @@ export default function QuizEngine({ documentId }: { documentId: string }) {
       setTimeout(() => {
         setFlash(null);
         setSelected(null);
-        setIndex((i) => i + 1);
+        advance();
       }, 900);
     },
-    [current, flash]
+    [currentQuestion, flash, advance]
   );
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (!current || flash || gameOver) return;
-      const opts = current.options.length ? current.options : [];
+      if (!currentQuestion || flash || gameOver) return;
+      const opts = currentQuestion.options.length ? currentQuestion.options : [];
       if (e.key >= "1" && e.key <= "4") {
         const i = parseInt(e.key) - 1;
         if (opts[i]) submit(opts[i]);
@@ -78,7 +131,7 @@ export default function QuizEngine({ documentId }: { documentId: string }) {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [current, flash, gameOver, selected, submit]);
+  }, [currentQuestion, flash, gameOver, selected, submit]);
 
   if (loading) {
     return (
@@ -88,7 +141,7 @@ export default function QuizEngine({ documentId }: { documentId: string }) {
     );
   }
 
-  if (gameOver) {
+  if (gameOver && hearts <= 0) {
     return (
       <div className="min-h-screen bg-[#0B0D0E] text-[#E6E8EA] flex flex-col items-center justify-center">
         <h1 className="text-5xl font-light uppercase tracking-tight">Game Over</h1>
@@ -97,7 +150,7 @@ export default function QuizEngine({ documentId }: { documentId: string }) {
     );
   }
 
-  if (index >= questions.length) {
+  if (gameOver && hearts > 0) {
     return (
       <div className="min-h-screen bg-[#0B0D0E] text-[#E6E8EA] flex flex-col items-center justify-center">
         <h1 className="text-5xl font-light uppercase tracking-tight">Complete</h1>
@@ -106,12 +159,28 @@ export default function QuizEngine({ documentId }: { documentId: string }) {
     );
   }
 
-  const opts = current.options.length ? current.options : [];
+  if (!currentQuestion) {
+    return (
+      <div className="min-h-screen bg-[#0B0D0E] text-[#E6E8EA] flex items-center justify-center font-mono text-xs tracking-widest">
+        NO QUESTIONS AVAILABLE
+      </div>
+    );
+  }
+
+  const opts = currentQuestion.options.length ? currentQuestion.options : [];
 
   return (
     <main className="min-h-screen bg-[#0B0D0E] text-[#E6E8EA] font-sans px-8 py-12 flex flex-col">
       <header className="max-w-3xl mx-auto w-full flex items-center justify-between mb-8 text-xs font-mono tracking-widest">
-        <div className="text-[#888]">Q {index + 1} / {questions.length}</div>
+        <div className="text-[#888]">
+          {isLevelMode ? (
+            <>
+              LEVEL {levelIndex + 1} / {levels.length} // {currentLevel?.title}
+            </>
+          ) : (
+            <>Q {currentQuestionNumber} / {totalQuestions}</>
+          )}
+        </div>
         <div className="text-[#0F5132]">XP {xp}</div>
         <div className="text-[#E6E8EA]">{"♥".repeat(hearts)}{"♡".repeat(START_HEARTS - hearts)}</div>
       </header>
@@ -125,10 +194,15 @@ export default function QuizEngine({ documentId }: { documentId: string }) {
           ].join(" ")}
         >
           <div className="text-[10px] font-mono tracking-widest text-[#6B7280] uppercase mb-4">
-            {current.type.replace("_", " ")}
+            {isLevelMode && (
+              <div className="text-[#0F5132] mb-2">
+                {currentLevel?.title}
+              </div>
+            )}
+            {currentQuestion.type.replace("_", " ")}
           </div>
           <h2 className="text-2xl font-light tracking-tight text-white leading-snug">
-            {current.question}
+            {currentQuestion.question}
           </h2>
         </div>
 
@@ -148,15 +222,6 @@ export default function QuizEngine({ documentId }: { documentId: string }) {
               {opt}
             </button>
           ))}
-          {current.type === "fill_blank" && (
-            <input
-              className="border border-[#22292D] bg-[#121618] px-6 py-4 text-sm font-mono text-white outline-none focus:border-[#0F5132]"
-              placeholder="Type answer and press Enter"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") submit((e.target as HTMLInputElement).value);
-              }}
-            />
-          )}
         </div>
 
         {flash && (
@@ -164,7 +229,7 @@ export default function QuizEngine({ documentId }: { documentId: string }) {
             {flash === "correct" ? (
               <span className="text-[#0F5132]">CORRECT // +{XP_PER_CORRECT} XP</span>
             ) : (
-              <span className="text-[#E8A0A0]">INCORRECT // {current.explanation}</span>
+              <span className="text-[#E8A0A0]">INCORRECT // {currentQuestion.explanation}</span>
             )}
           </div>
         )}
