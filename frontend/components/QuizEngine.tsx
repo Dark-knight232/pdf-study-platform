@@ -32,27 +32,39 @@ export default function QuizEngine({ documentId }: { documentId: string }) {
   const [flash, setFlash] = useState<"correct" | "wrong" | null>(null);
   const [gameOver, setGameOver] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
+
+  const fetchQuiz = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/documents/${documentId}/quiz`, { method: "POST" });
+      const data = await res.json();
+      if (data.levels && data.levels.length > 0) {
+        setLevels(data.levels);
+        setIsLevelMode(true);
+        setLevelIndex(0);
+        setQuestionIndex(0);
+      } else if (data.questions && data.questions.length > 0) {
+        setFlatQuestions(data.questions);
+        setIsLevelMode(false);
+        setQuestionIndex(0);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [documentId, retryCount]);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch(`${API_BASE}/api/v1/documents/${documentId}/quiz`, { method: "POST" });
-        const data = await res.json();
-        if (data.levels && data.levels.length > 0) {
-          setLevels(data.levels);
-          setIsLevelMode(true);
-          setLevelIndex(0);
-          setQuestionIndex(0);
-        } else if (data.questions && data.questions.length > 0) {
-          setFlatQuestions(data.questions);
-          setIsLevelMode(false);
-          setQuestionIndex(0);
-        }
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [documentId]);
+    fetchQuiz();
+  }, [fetchQuiz]);
+
+  const retry = useCallback(() => {
+    setHearts(START_HEARTS);
+    setXp(0);
+    setStreak(0);
+    setGameOver(false);
+    setLoading(true);
+    setRetryCount((c) => c + 1);
+  }, []);
 
   const currentLevel = isLevelMode && levelIndex < levels.length ? levels[levelIndex] : null;
   const currentQuestion = currentLevel
@@ -146,6 +158,14 @@ export default function QuizEngine({ documentId }: { documentId: string }) {
       <div className="min-h-screen bg-[#0B0D0E] text-[#E6E8EA] flex flex-col items-center justify-center">
         <h1 className="text-5xl font-light uppercase tracking-tight">Game Over</h1>
         <p className="mt-4 font-mono text-sm text-[#888]">XP EARNED: {xp}</p>
+        <button
+          onClick={retry}
+          className={[
+            "mt-6 rounded bg-[#1F2937] px-6 py-3 text-sm font-medium text-white hover:bg-[#27354A] transition-colors",
+          ].join(" ")}
+        >
+          Retry
+        </button>
       </div>
     );
   }

@@ -236,7 +236,9 @@ async def quiz(document_id: str):
         questions_per_level = 10
         questions = []
         for i, mod in enumerate(modules):
-            mod_context = f"\nModule: {mod.get('title', '')}\nDescription: {mod.get('description', '')}\nSource pages: {mod.get('source_pages', [1])}"
+            import random
+            seed = random.randint(0, 1000000)
+            mod_context = f"\nModule: {mod.get('title', '')}\nDescription: {mod.get('description', '')}\nSource pages: {mod.get('source_pages', [1])}\nVariation seed: {seed}"
             system = ("You are a quiz generator. Return JSON with key 'levels', an array of level objects. "
                       "Each level has 'title' (string, the module title) and 'questions' (array of exactly "
                       "10 objects). Each question: question (string), type (mcq|true_false), "
@@ -310,7 +312,8 @@ async def quiz(document_id: str):
                   "Each: question (string), type (mcq|true_false), options (array of 4 strings for mcq, "
                   '["True","False"] for true_false), correct_answer (string matching one option), '
                   "explanation (string). Return ONLY valid JSON. Do NOT include fill_blank type.")
-        user = f"Generate 10 diverse questions from:\n{pages_context}"
+        import random
+        user = f"Generate 10 diverse questions from:\n{pages_context}\nVariation seed: {random.randint(0, 1000000)}"
         raw = await _call_llm(system, user)
         if not raw:
             questions = []
