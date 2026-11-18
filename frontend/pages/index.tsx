@@ -133,7 +133,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0B0D0E] text-[#E6E8EA] relative">
+    <div className="min-h-screen bg-[#0B0D0E] text-white relative">
       {/* ===== LAYER 1 // SKY ===== */}
       <div
         ref={skyRef}
@@ -175,14 +175,14 @@ export default function Home() {
         className="fixed inset-0 z-0 pointer-events-none"
         style={{
           background:
-            "linear-gradient(180deg, rgba(11,13,14,0.45) 0%, rgba(11,13,14,0.18) 25%, rgba(11,13,14,0.3) 65%, rgba(11,13,14,0.7) 100%)",
+            "linear-gradient(180deg, rgba(11,13,14,0.66) 0%, rgba(11,13,14,0.42) 25%, rgba(11,13,14,0.52) 65%, rgba(11,13,14,0.82) 100%)",
         }}
       />
       <div
         className="fixed inset-0 z-0 pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(15,81,50,0.16) 0%, transparent 70%)",
+            "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(15,81,50,0.10) 0%, transparent 70%)",
         }}
       />
 
@@ -201,7 +201,7 @@ export default function Home() {
           <span className="italic font-serif text-[#C6A15B]">Master</span> Suite
         </h1>
 
-        <p className="mt-10 text-sm md:text-base text-[#B8BEC2] max-w-xl font-normal leading-relaxed">
+        <p className="mt-10 text-sm md:text-base text-white max-w-xl font-normal leading-relaxed">
           A royal knowledge engine that transforms raw PDFs into structured
           roadmaps, executive summaries, and ascension trials.
         </p>
@@ -220,7 +220,7 @@ export default function Home() {
         <h2 className="text-4xl md:text-6xl font-light tracking-tight text-white uppercase leading-[1.05] mb-6">
           Engineered <span className="italic font-serif text-[#C6A15B]">for Mastery.</span>
         </h2>
-        <p className="text-sm text-[#9AA1A6] max-w-2xl leading-relaxed mb-16">
+        <p className="text-sm text-white max-w-2xl leading-relaxed mb-16">
           Three disciplines, one instrument. Every stage of your document is
           refined, stored, and transported with integrity.
         </p>
@@ -237,7 +237,7 @@ export default function Home() {
               <h3 className="text-2xl font-light tracking-tight text-white uppercase mb-4">
                 {f.title}
               </h3>
-              <p className="text-sm text-[#9AA1A6] leading-relaxed">{f.body}</p>
+              <p className="text-sm text-white leading-relaxed">{f.body}</p>
               <div className="mt-8 pt-6 border-t border-[#22292D]">
                 <div className="w-8 h-px bg-[#0F5132]" />
               </div>
@@ -254,7 +254,7 @@ export default function Home() {
         <h2 className="text-4xl md:text-6xl font-light tracking-tight text-white uppercase leading-[1.05] mb-6">
           Begin Your <span className="italic font-serif text-[#C6A15B]">Ascent.</span>
         </h2>
-        <p className="text-sm text-[#9AA1A6] max-w-2xl leading-relaxed mb-16">
+        <p className="text-sm text-white max-w-2xl leading-relaxed mb-16">
           Upload your source PDF. The pipeline executes client-side validation,
           high-density extraction, and multi-tier knowledge synthesis before
           tokenization.
@@ -270,7 +270,7 @@ export default function Home() {
                 <h3 className="text-2xl md:text-3xl font-light tracking-tight uppercase">
                   Learning <span className="italic font-serif text-[#C6A15B]">Roadmap</span>
                 </h3>
-                {roadmapLoading && <span className="text-xs font-mono text-[#666]">LOADING...</span>}
+                {roadmapLoading && <span className="text-xs font-mono text-white">LOADING...</span>}
               </header>
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {roadmap.map((m) => (
@@ -279,14 +279,14 @@ export default function Home() {
                       {m.id}
                     </div>
                     <h4 className="text-xl font-light text-white mb-2">{m.title}</h4>
-                    <p className="text-sm text-[#888] mb-4">{m.description}</p>
-                    <div className="text-xs font-mono text-[#0F5132]">
+                    <p className="text-sm text-white mb-4">{m.description}</p>
+                    <div className="text-xs font-mono text-white">
                       Source pages: {m.source_pages?.join(", ") || "—"}
                     </div>
                   </article>
                 ))}
                 {roadmap.length === 0 && !roadmapLoading && (
-                  <p className="text-sm text-[#888] col-span-full">No modules generated.</p>
+                  <p className="text-sm text-white col-span-full">No modules generated.</p>
                 )}
               </div>
             </div>
@@ -297,40 +297,40 @@ export default function Home() {
                 <h3 className="text-2xl md:text-3xl font-light tracking-tight uppercase">
                   Executive <span className="italic font-serif text-[#C6A15B]">Summary</span>
                 </h3>
-                {summaryLoading && <span className="text-xs font-mono text-[#666]">LOADING...</span>}
+                {summaryLoading && <span className="text-xs font-mono text-white">LOADING...</span>}
               </header>
               {summary ? (
                 <div className="space-y-8">
                   <div className="border border-[#22292D] bg-[#121618]/90 p-6">
-                    <div className="text-xs font-mono tracking-widest text-[#666] uppercase mb-3">
+                    <div className="text-xs font-mono tracking-widest text-white uppercase mb-3">
                       Overview
                     </div>
                     <p className="text-base leading-relaxed text-white">{summary.executive_overview || "—"}</p>
                   </div>
                   <div className="border border-[#22292D] bg-[#121618]/90 p-6">
-                    <div className="text-xs font-mono tracking-widest text-[#666] uppercase mb-3">
+                    <div className="text-xs font-mono tracking-widest text-white uppercase mb-3">
                       Chapter Breakdown
                     </div>
-                    <div className="whitespace-pre-wrap text-sm leading-relaxed text-[#CCC] font-mono">
+                    <div className="whitespace-pre-wrap text-sm leading-relaxed text-white font-mono">
                       {summary.chapter_breakdown || "—"}
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs font-mono tracking-widest text-[#666] uppercase mb-3">
+                    <div className="text-xs font-mono tracking-widest text-white uppercase mb-3">
                       Flashcards
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
                       {summary.flashcards?.map((fc, i) => (
                         <article key={i} className="border border-[#22292D] bg-[#121618]/90 p-4">
-                          <div className="font-mono text-sm text-[#0F5132] mb-1">{fc.term}</div>
-                          <div className="text-sm text-[#CCC]">{fc.definition}</div>
+                          <div className="font-mono text-sm text-white mb-1">{fc.term}</div>
+                          <div className="text-sm text-white">{fc.definition}</div>
                         </article>
                       ))}
                     </div>
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-[#888]">Generating summary...</p>
+                <p className="text-sm text-white">Generating summary...</p>
               )}
             </div>
 
@@ -344,7 +344,7 @@ export default function Home() {
 
       {/* ================= FOOTER ================= */}
       <footer className="relative z-10 border-t border-[#22292D] mt-16">
-        <div className="max-w-7xl mx-auto px-8 py-10 flex flex-col md:flex-row justify-between items-center gap-4 text-[11px] tracking-widest uppercase text-[#666]">
+        <div className="max-w-7xl mx-auto px-8 py-10 flex flex-col md:flex-row justify-between items-center gap-4 text-[11px] tracking-widest uppercase text-white">
           <span>GrandMaster Suite // Knowledge Engine</span>
           <span className="text-[#C6A15B]">Est. 2026</span>
           <span>Secure Parsing Pipeline</span>

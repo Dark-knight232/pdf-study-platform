@@ -231,15 +231,15 @@ async def quiz(document_id: str):
         for m in modules:
             if isinstance(m.get("source_pages"), list):
                 m["source_pages"] = [int(x) for x in m["source_pages"]]
-        # Generate 3 levels, each with 3 questions from the LLM
+        # Generate 3 levels, each with 10 questions from the LLM
         level_titles = [m.get("title", f"Module {i+1}") for i, m in enumerate(modules)]
-        questions_per_level = 3
+        questions_per_level = 10
         questions = []
         for i, mod in enumerate(modules):
             mod_context = f"\nModule: {mod.get('title', '')}\nDescription: {mod.get('description', '')}\nSource pages: {mod.get('source_pages', [1])}"
             system = ("You are a quiz generator. Return JSON with key 'levels', an array of level objects. "
                       "Each level has 'title' (string, the module title) and 'questions' (array of exactly "
-                      "3 objects). Each question: question (string), type (mcq|true_false), "
+                      "10 objects). Each question: question (string), type (mcq|true_false), "
                       'options (array of exactly 4 strings for mcq, ["True","False"] for true_false), '
                       "correct_answer (string matching one option), explanation (string). "
                       "Do NOT include fill_blank type. Generate questions specifically about "
@@ -248,7 +248,7 @@ async def quiz(document_id: str):
             try:
                 raw = await _call_llm(system, user)
                 if raw and isinstance(raw, dict) and "levels" in raw:
-                    level_questions = raw["levels"][i].get("questions", []) if i < len(raw["levels"]) else []
+                    level_questions = raw["levels"][0].get("questions", []) if raw["levels"] else []
                     questions.append({
                         "title": mod.get("title", f"Module {i+1}"),
                         "questions": level_questions[:questions_per_level]
