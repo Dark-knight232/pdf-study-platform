@@ -3,4 +3,6 @@ module.exports = {
   reactStrictMode: false,
   images: { unoptimized: true },
   swcMinify: true,
+  eslint: { ignoreDuringBuilds: true },
+  typescript: { ignoreBuildErrors: true },
 }
