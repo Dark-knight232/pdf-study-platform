@@ -1,0 +1,33 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "mcp": {
+    "firecrawl": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "firecrawl-mcp"
+      ],
+      "environment": {
+        "FIRECRAWL_API_KEY": "fc-8cfd8de3c05542efa9b9b7253fc3c7dd"
+      }
+    },
+    "playwright": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@playwright/mcp@0.0.38"
+      ]
+    },
+    "redis": {
+      "type": "local",
+      "command": [
+        "uvx",
+        "mcp-server-redis",
+        "--url",
+        "redis://localhost:6379 "
+      ]
+    }
+  }
+}

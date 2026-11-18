@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: pdf-study-api
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: S3_BUCKET_NAME
+        value: raw_pdfs
+      - key: LLM_API_KEY
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+  - type: worker
+    name: pdf-study-worker
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A worker.celery_app worker --loglevel=info
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: S3_BUCKET_NAME
+        value: raw_pdfs
+      - key: LLM_API_KEY
+        sync: false

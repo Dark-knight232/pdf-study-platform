@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Montfort Ingestion Dropzone</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; }
+  .font-mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+  .font-serif { font-family: "Playfair Display", serif; }
+</style>
+</head>
+<body class="bg-[#080808] text-[#E6E6E6] min-h-screen">
+  <main class="min-h-screen px-8 py-16 flex flex-col justify-between selection:bg-white selection:text-black">
+    <header class="max-w-7xl mx-auto w-full grid grid-cols-2 md:grid-cols-4 pb-8 border-b border-[#222] text-[11px] tracking-widest uppercase text-[#888]">
+      <div>PHASE 01 // INGESTION</div>
+      <div class="text-right md:text-left">SYSTEM: SECURE</div>
+      <div class="hidden md:block">LIMIT: 20 PAGES</div>
+      <div class="hidden md:block text-right">STATUS: <span id="statusHeader">IDLE</span></div>
+    </header>
+
+    <section class="max-w-7xl mx-auto w-full my-16 grid grid-cols-1 lg:grid-cols-12 gap-12 items-end">
+      <div class="lg:col-span-8">
+        <h1 class="text-5xl sm:text-7xl font-light tracking-tight text-white leading-[1.05] uppercase">
+          Document <br />
+          <span class="italic font-serif text-[#999]">Ingestion</span> &amp; <br />
+          Validation.
+        </h1>
+        <p class="mt-8 text-sm text-[#888] max-w-xl font-normal leading-relaxed">
+          Upload raw study material. Our pipeline executes client-side structural validation, high-density OCR extraction, and multi-tier knowledge synthesis before tokenization.
+        </p>
+      </div>
+      <div class="lg:col-span-4 border border-[#222] p-6 bg-[#0D0D0D] flex flex-col justify-between h-48">
+        <span class="text-[10px] tracking-widest text-[#666] uppercase">SECURE REPOSITORY</span>
+        <div>
+          <div class="text-3xl font-light text-white font-mono">15.0 MB</div>
+          <div class="text-xs text-[#888] mt-1">Maximum payload capacity per stream</div>
+        </div>
+        <div class="text-[10px] text-emerald-500 font-mono">READY FOR INPUT</div>
+      </div>
+    </section>
+
+    <section class="max-w-7xl mx-auto w-full mb-16">
+      <div id="dropzone" class="border transition-all p-16 md:p-24 text-center cursor-pointer bg-[#0D0D0D] relative group border-[#222] hover:border-[#444]">
+        <input id="fileInput" type="file" accept="application/pdf" class="hidden" />
+        <div class="space-y-4 max-w-md mx-auto">
+          <span class="text-xs font-mono uppercase tracking-widest text-[#666] block">[ DROPZONE // SOURCE_PDF ]</span>
+          <h2 id="fileName" class="text-xl font-light tracking-wide text-white">Drag &amp; drop your PDF document here, or click to browse.</h2>
+          <span class="text-xs text-[#888] block">Enforces strict client-side page counts (≤ 20 pages) prior to network transmission.</span>
+        </div>
+      </div>
+
+      <div id="errorBox" class="hidden mt-4 p-4 border border-red-900/50 bg-red-950/20 text-red-400 text-xs font-mono"></div>
+
+      <div id="logSection" class="hidden mt-4 border border-[#222] bg-[#0A0A0A] p-6 font-mono text-xs text-[#888] space-y-2">
+        <div class="text-[#550000] uppercase tracking-widest text-[10px] pb-2 border-b border-[#222] flex justify-between">
+          <span>Execution Log</span>
+          <span id="logStatus">IDLE</span>
+        </div>
+        <div id="logBody"></div>
+      </div>
+    </section>
+
+    <footer class="max-w-7xl mx-auto w-full pt-8 border-t border-[#222] flex flex-col md:flex-row justify-between items-center text-[11px] text-[#666] tracking-wider">
+      <span>MONTFORT ARCHITECTURE // KNOWLEDGE ENGINE</span>
+      <span class="mt-2 md:mt-0">SECURE PARSING PIPELINE</span>
+    </footer>
+  </main>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+let file=null, status='IDLE', pollTimer=null;
+const $=id=>document.getElementById(id);
+function setStatus(s){ status=s; $('statusHeader').textContent=s; $('logStatus').textContent=s; }
+function showError(m){ $('errorBox').textContent=m; $('errorBox').classList.remove('hidden'); }
+function clearError(){ $('errorBox').classList.add('hidden'); }
+function ts(){ return new Date().toISOString().split('T')[1].slice(0,8); }
+function addLog(m){ const d=document.createElement('div'); d.textContent=`[${ts()}] ${m}`; $('logBody').appendChild(d); }
+async function validateAndProcess(f){
+  clearError(); setStatus('VALIDATING'); $('logBody').innerHTML=''; $('logSection').classList.remove('hidden');
+  addLog(`INIT // INGESTION SEQUENCE: ${f.name}`);
+  if(f.type!=='application/pdf'){ setStatus('ERROR'); showError('REJECTED: INVALID MIME TYPE [APPLICATION/PDF REQUIRED]'); return; }
+  if(f.size>15*1024*1024){ setStatus('ERROR'); showError('REJECTED: FILE SIZE EXCEEDS 15MB THRESHOLD'); return; }
+  try{
+    addLog('ANALYZING DOCUMENT STRUCTURE...');
+    const buf=await f.arrayBuffer();
+    const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+    const pages=pdf.numPages;
+    addLog(`PAGE COUNT VERIFIED: ${pages} PAGES`);
+    if(pages>20){ setStatus('ERROR'); showError(`REJECTED: EXCEEDS 20-PAGE LIMIT [DETECTED: ${pages}]`); return; }
+    file=f; $('fileName').textContent=f.name;
+    addLog('VALIDATION SUCCESSFUL. INITIATING UPLOAD.');
+    triggerUpload(f);
+  }catch(e){ setStatus('ERROR'); showError('FATAL: UNABLE TO PARSE BINARY STRUCTURE'); }
+}
+async function triggerUpload(f){
+  setStatus('UPLOADING'); addLog('ESTABLISHING SECURE MULTIPART UPLOAD...');
+  const fd=new FormData(); fd.append('file',f);
+  try{
+    const res=await fetch('/api/v1/documents/upload',{method:'POST',body:fd});
+    if(!res.ok) throw new Error('Server ingestion failed.');
+    const data=await res.json();
+    addLog(`TRANSMISSION COMPLETE [ID: ${data.document_id}]`);
+    setStatus('PROCESSING');
+    startPolling(data.document_id);
+  }catch(e){ setStatus('ERROR'); showError(`TRANSMISSION ERROR: ${e.message}`); }
+}
+function startPolling(docId){
+  pollTimer=setInterval(async()=>{
+    try{
+      const res=await fetch(`/api/v1/documents/${docId}/status`);
+      const data=await res.json();
+      if(data.status==='PROCESSING') addLog('[OCR WORKER] Parsing layout layer...');
+      else if(data.status==='COMPLETED'){ setStatus('COMPLETED'); addLog('[SUCCESS] Extraction & Knowledge Pipeline Synchronized.'); clearInterval(pollTimer); pollTimer=null; }
+      else if(data.status==='FAILED'){ setStatus('ERROR'); showError(`PIPELINE FAILURE: ${data.error_message}`); clearInterval(pollTimer); pollTimer=null; }
+    }catch(e){ console.error(e); }
+  },2000);
+}
+const dz=$('dropzone');
+dz.addEventListener('dragover',e=>{e.preventDefault(); dz.classList.add('border-white','bg-white/5'); dz.classList.remove('border-[#222]');});
+dz.addEventListener('dragleave',()=>{ dz.classList.remove('border-white','bg-white/5'); dz.classList.add('border-[#222]');});
+dz.addEventListener('drop',e=>{ e.preventDefault(); dz.classList.remove('border-white','bg-white/5'); dz.classList.add('border-[#222]'); if(e.dataTransfer.files?.[0]) validateAndProcess(e.dataTransfer.files[0]);});
+dz.addEventListener('click',()=> $('fileInput').click());
+$('fileInput').addEventListener('change',e=>{ if(e.target.files?.[0]) validateAndProcess(e.target.files[0]);});
+</script>
+</body>
+</html>
