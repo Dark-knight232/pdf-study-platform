@@ -150,7 +150,7 @@ async def roadmap(document_id: str):
         # Fallback stub: one module from filename
         return {"modules": [{"id": "mod_1", "title": "Introduction",
                              "description": f"Overview of {cache.get('filename', 'document')}",
-                             "source_pages": [1]]}}
+                             "source_pages": [1]}]}
 
     # Ensure modules is a list
     modules = raw.get("modules", [])
