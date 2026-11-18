@@ -3,6 +3,8 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { PDFDocument } from 'pdf-lib';
 
+const API_BASE = "https://pdf-study-api.onrender.com";
+
 type UploadState = 'IDLE' | 'VALIDATING' | 'UPLOADING' | 'PROCESSING' | 'COMPLETED' | 'ERROR';
 
 export default function MontfortIngestionDropzone() {
@@ -71,7 +73,7 @@ export default function MontfortIngestionDropzone() {
 
     try {
       setUploadProgress(50);
-      const response = await fetch('/api/v1/documents/upload', {
+      const response = await fetch(`${API_BASE}/api/v1/documents/upload`, {
         method: 'POST',
         body: formData,
       });
@@ -94,7 +96,7 @@ export default function MontfortIngestionDropzone() {
 
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/v1/documents/${documentId}/status`);
+        const res = await fetch(`${API_BASE}/api/v1/documents/${documentId}/status`);
         const data = await res.json();
 
         if (data.status === 'PROCESSING') {
