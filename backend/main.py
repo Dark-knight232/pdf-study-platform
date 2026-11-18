@@ -9,9 +9,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db import Base, Document, DocumentChunk, engine, get_session
-from app.synthesis import generate_roadmap, generate_summary
-from app.quiz import generate_quiz
+from .db import Base, Document, DocumentChunk, engine, get_session
+from .synthesis import generate_roadmap, generate_summary
+from .quiz import generate_quiz
 
 app = FastAPI(title="Knowledge Synthesis Engine", version="1.0.0")
 
@@ -44,9 +44,9 @@ async def upload_document(file: UploadFile = File(...), session: AsyncSession = 
     if len(data) > 15 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="ERROR // FILE EXCEEDS 15MB LIMIT")
 
-    try:
-        import fitz
+    import fitz
 
+    try:
         doc = fitz.open(stream=data, filetype="pdf")
         page_count = doc.page_count
         if page_count > 20:
@@ -70,7 +70,7 @@ async def upload_document(file: UploadFile = File(...), session: AsyncSession = 
     await session.commit()
 
     try:
-        from app.config import settings
+        from .config import settings
         from supabase import create_client
 
         supabase = create_client(settings.supabase_url, settings.supabase_key)
